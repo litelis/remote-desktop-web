@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  server:
+    build: ./server
+    container_name: remote-desktop-server
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=8443
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - JWT_SECRET=${JWT_SECRET:-super-secret-key-change-in-production}
+    ports:
+      - "8443:8443"
+    networks:
+      - remote-desktop
+
+networks:
+  remote-desktop:
+    driver: bridge
