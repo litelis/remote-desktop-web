@@ -50,23 +50,25 @@ def check_prerequisites():
     # Verificar Node.js
     try:
         result = subprocess.run(['node', '--version'], 
-                              capture_output=True, text=True, check=True)
+                              capture_output=True, text=True, check=True, shell=True)
         node_version = result.stdout.strip()
         print(f"{Colors.GREEN}✅ Node.js: {node_version}{Colors.ENDC}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print(f"{Colors.RED}❌ Node.js no está instalado{Colors.ENDC}")
         print(f"{Colors.YELLOW}   Descarga desde: https://nodejs.org/{Colors.ENDC}")
         return False
+
     
     # Verificar npm
     try:
         result = subprocess.run(['npm', '--version'], 
-                              capture_output=True, text=True, check=True)
+                              capture_output=True, text=True, check=True, shell=True)
         npm_version = result.stdout.strip()
         print(f"{Colors.GREEN}✅ npm: v{npm_version}{Colors.ENDC}")
     except (subprocess.CalledProcessError, FileNotFoundError):
         print(f"{Colors.RED}❌ npm no está instalado{Colors.ENDC}")
         return False
+
     
     # Verificar Python
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
@@ -90,15 +92,16 @@ def install_dependencies():
     try:
         # Instalar dependencias raíz
         print(f"{Colors.BLUE}   → Instalando dependencias raíz...{Colors.ENDC}")
-        subprocess.run(['npm', 'install'], check=True, cwd=".")
+        subprocess.run(['npm', 'install'], check=True, cwd=".", shell=True)
         
         # Instalar dependencias server
         print(f"{Colors.BLUE}   → Instalando dependencias del servidor...{Colors.ENDC}")
-        subprocess.run(['npm', 'install'], check=True, cwd="server")
+        subprocess.run(['npm', 'install'], check=True, cwd="server", shell=True)
         
         # Instalar dependencias client
         print(f"{Colors.BLUE}   → Instalando dependencias del cliente...{Colors.ENDC}")
-        subprocess.run(['npm', 'install'], check=True, cwd="client")
+        subprocess.run(['npm', 'install'], check=True, cwd="client", shell=True)
+
         
         print(f"\n{Colors.GREEN}✅ Todas las dependencias instaladas correctamente{Colors.ENDC}")
         return True
