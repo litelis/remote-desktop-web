@@ -33,9 +33,10 @@
 ### Opción 1: Instalación Automática (Recomendado)
 
 ```cmd
-git clone https://github.com/TU_USUARIO/remote-desktop-web.git
+git clone https://github.com/litelis/remote-desktop-web.git
 cd remote-desktop-web
 scripts\install.bat
+
 npm run dev
 ```
 
@@ -53,11 +54,12 @@ Accede a `http://localhost:8443`
 
 ```cmd
 # 1. Clonar repositorio
-git clone https://github.com/TU_USUARIO/remote-desktop-web.git
+git clone https://github.com/litelis/remote-desktop-web.git
 cd remote-desktop-web
 
 # 2. Instalar dependencias
 npm run install:all
+
 
 # 3. Configurar variables de entorno
 copy server\.env.example server\.env
@@ -70,9 +72,31 @@ notepad server\.env
 npm run dev
 ```
 
+### Opción 4: Python desde VS Code (Recomendado para desarrollo)
+
+```cmd
+# 1. Clonar repositorio
+git clone https://github.com/litelis/remote-desktop-web.git
+cd remote-desktop-web
+
+
+# 2. Iniciar con Python (instala dependencias automáticamente)
+python start_project.py --install
+```
+
+**Ventajas de usar Python:**
+- ✅ Verificación automática de prerrequisitos (Node.js, npm)
+- ✅ Instalación automática de dependencias
+- ✅ Output coloreado y organizado por servicio
+- ✅ Manejo graceful de interrupciones (Ctrl+C)
+- ✅ Ideal para desarrollo en VS Code
+
+**Requisitos:** Python 3.6+ (incluido en la mayoría de sistemas modernos)
+
 ---
 
 ## 📋 Requisitos del Sistema
+
 
 | Sistema | Requisitos |
 |---------|-----------|
@@ -120,7 +144,10 @@ remote-desktop-web/
 │
 ├── docker-compose.yml         # Docker orchestration
 ├── package.json               # Root package.json
+├── start_project.py           # 🐍 Script Python para VS Code
 └── README.md                  # This file
+
+
 ```
 
 ---
@@ -204,6 +231,8 @@ npm run install:all          # Instala todas las dependencias
 npm run dev                  # Inicia cliente y servidor en paralelo
 npm run dev:server           # Solo servidor con nodemon
 npm run dev:client           # Solo cliente React
+python start_project.py      # Inicia con Python (VS Code)
+python start_project.py -i   # Instala dependencias e inicia
 
 # Producción
 npm run build                # Compila cliente para producción
@@ -216,6 +245,7 @@ npm run docker:up            # Levanta stack completo
 npm run docker:down          # Detiene stack
 npm run docker:logs          # Muestra logs
 ```
+
 
 ---
 
@@ -385,16 +415,19 @@ El uso no autorizado de sistemas informáticos es **ilegal** en la mayoría de j
 
 ## 📞 Soporte
 
-- 🐛 **Issues**: [GitHub Issues](https://github.com/TU_USUARIO/remote-desktop-web/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/TU_USUARIO/remote-desktop-web/discussions)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/litelis/remote-desktop-web/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/litelis/remote-desktop-web/discussions)
+
 - 📧 **Email**: tu.email@ejemplo.com
 
 ---
 
 <p align="center">
-  Hecho con ❤️ y ☕ por <a href="https://github.com/TU_USUARIO">@TU_USUARIO</a>
+  Hecho con ❤️ y ☕ por <a href="https://github.com/litelis">@litelis</a>
+
 </p>
 
 <p align="center">
-  <a href="https://github.com/TU_USUARIO/remote-desktop-web/stargazers">⭐ Star este repo</a> si te fue útil
+  <a href="https://github.com/litelis/remote-desktop-web/stargazers">⭐ Star este repo</a> si te fue útil
+
 </p>
