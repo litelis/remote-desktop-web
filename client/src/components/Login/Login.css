@@ -126,17 +126,91 @@
   font-size: 1.1rem;
 }
 
-.warning {
-  margin-top: 1.5rem;
-  font-size: 0.8rem;
-  color: #999;
-  padding: 10px;
-  background: #f9f9f9;
+/* Connection Mode Toggle */
+.connection-mode-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  background: #f0f0f0;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
   border-radius: 6px;
-  border-left: 3px solid #ffc107;
+  transition: all 0.3s ease;
+}
+
+.mode-btn:hover {
+  color: #333;
+}
+
+.mode-btn.active {
+  background: white;
+  color: #2a5298;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Public Warning */
+.public-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.public-warning .warning-icon {
+  font-size: 1.5rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.public-warning p {
+  margin: 0;
+  color: #856404;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.public-warning small {
+  color: #856404;
+  font-size: 0.8rem;
+}
+
+/* Public Mode Button */
+.btn-primary.public-mode {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+}
+
+.btn-primary.public-mode:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+}
+
+/* Security Info - Public Mode */
+.security-item.public {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+/* Warning Text - Public Mode */
+.warning.public-warning-text {
+  background: #fff3cd;
+  border-left-color: #ff9800;
+  color: #856404;
 }
 
 @media (max-width: 480px) {
+
   .login-box {
     padding: 2rem;
   }

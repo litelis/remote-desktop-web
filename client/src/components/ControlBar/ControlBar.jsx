@@ -9,8 +9,10 @@ export default function ControlBar({
   onQualityChange,
   onRestart, 
   onShutdown,
-  onLogout 
+  onLogout,
+  isPublic = false
 }) {
+
   return (
     <div className="control-bar">
       <div className="control-section">
@@ -38,27 +40,39 @@ export default function ControlBar({
       </div>
 
       <div className="control-section actions">
-        <button 
-          onClick={onRestart}
-          disabled={!connected}
-          className="btn-warning"
-          title="Reiniciar sistema"
-        >
-          <span>🔄</span>
-          Reiniciar
-        </button>
+        {!isPublic && (
+          <>
+            <button 
+              onClick={onRestart}
+              disabled={!connected}
+              className="btn-warning"
+              title="Reiniciar sistema"
+            >
+              <span>🔄</span>
+              Reiniciar
+            </button>
+            
+            <button 
+              onClick={onShutdown}
+              disabled={!connected}
+              className="btn-danger"
+              title="Apagar sistema"
+            >
+              <span>⏻</span>
+              Apagar
+            </button>
+            
+            <div className="divider"></div>
+          </>
+        )}
         
-        <button 
-          onClick={onShutdown}
-          disabled={!connected}
-          className="btn-danger"
-          title="Apagar sistema"
-        >
-          <span>⏻</span>
-          Apagar
-        </button>
-        
-        <div className="divider"></div>
+        {isPublic && (
+          <span className="public-indicator" title="Modo público - Funciones limitadas">
+            <span>🌐</span>
+            Modo Público
+          </span>
+        )}
+
         
         <button 
           onClick={onLogout}

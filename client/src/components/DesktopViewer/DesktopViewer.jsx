@@ -7,7 +7,8 @@ import './DesktopViewer.css';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8443';
 const WS_URL = process.env.REACT_APP_WS_URL || API_URL;
 
-export default function DesktopViewer({ token, onLogout }) {
+export default function DesktopViewer({ token, onLogout, connectionType = 'private' }) {
+
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const socketRef = useRef(null);
@@ -18,8 +19,11 @@ export default function DesktopViewer({ token, onLogout }) {
   const [latency, setLatency] = useState(0);
   const [screenSize, setScreenSize] = useState({ width: 0, height: 0 });
   const [quality, setQuality] = useState(80);
+  const [connectionInfo, setConnectionInfo] = useState(null);
+  const isPublic = connectionType === 'public' || (connectionInfo?.type === 'public');
   
   const frameCount = useRef(0);
+
   const lastTime = useRef(Date.now());
   const latencyInterval = useRef(null);
 
@@ -42,7 +46,8 @@ export default function DesktopViewer({ token, onLogout }) {
     socket.on('connect', () => {
       setConnected(true);
       setConnecting(false);
-      toast.success('Conectado al escritorio remoto');
+      const msg = isPublic ? 'Conectado en modo público' : 'Conectado al escritorio remoto';
+      toast.success(msg);
       
       // Medir latencia cada 5 segundos
       latencyInterval.current = setInterval(() => {
@@ -50,6 +55,14 @@ export default function DesktopViewer({ token, onLogout }) {
         socket.emit('ping_test', start);
       }, 5000);
     });
+
+    socket.on('connection_info', (info) => {
+      setConnectionInfo(info);
+      if (info.type === 'public') {
+        toast.info('Modo público: Algunas funciones están limitadas', { duration: 5000 });
+      }
+    });
+
 
     socket.on('disconnect', (reason) => {
       setConnected(false);
@@ -201,19 +214,38 @@ export default function DesktopViewer({ token, onLogout }) {
   };
 
   const handleRestart = () => {
+    if (isPublic) {
+      toast.error('Reinicio no disponible en modo público');
+      return;
+    }
     if (window.confirm('¿Estás seguro de reiniciar el sistema?\nTodos los programas se cerrarán.')) {
       socketRef.current.emit('system_restart');
     }
   };
 
   const handleShutdown = () => {
+    if (isPublic) {
+      toast.error('Apagado no disponible en modo público');
+      return;
+    }
     if (window.confirm('¿Estás seguro de apagar el sistema?')) {
       socketRef.current.emit('system_shutdown');
     }
   };
 
+
   return (
     <div className="viewer-container" ref={containerRef}>
+      {isPublic && (
+        <div className="public-mode-banner">
+          <span className="public-icon">🌐</span>
+          <span>Modo Público - Acceso Limitado</span>
+          {connectionInfo?.expiresIn && (
+            <span className="expires-info">Expira en: {connectionInfo.expiresIn}</span>
+          )}
+        </div>
+      )}
+      
       <ControlBar 
         connected={connected}
         fps={fps}
@@ -222,6 +254,7 @@ export default function DesktopViewer({ token, onLogout }) {
         onQualityChange={handleQualityChange}
         onRestart={handleRestart}
         onShutdown={handleShutdown}
+        isPublic={isPublic}
         onLogout={() => {
           if (socketRef.current) {
             socketRef.current.emit('logout');
@@ -229,6 +262,7 @@ export default function DesktopViewer({ token, onLogout }) {
           onLogout();
         }}
       />
+
       
       <div className="canvas-wrapper">
         {connecting && (
@@ -261,8 +295,9 @@ export default function DesktopViewer({ token, onLogout }) {
       <div className="status-bar">
         <div className="status-group">
           <span className={`status-dot ${connected ? 'online' : 'offline'}`}></span>
-          <span>{connected ? 'Conectado' : 'Desconectado'}</span>
+          <span>{connected ? (isPublic ? 'Conectado (Público)' : 'Conectado') : 'Desconectado'}</span>
         </div>
+
         
         <div className="status-group">
           <span className="label">Resolución:</span>

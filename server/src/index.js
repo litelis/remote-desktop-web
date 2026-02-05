@@ -12,6 +12,14 @@ import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
 import { authenticateSocket } from './middleware/auth.js';
 import { limiter } from './middleware/rateLimiter.js';
+import { 
+  registerPublicConnection, 
+  unregisterPublicConnection, 
+  isPublicConnection,
+  getPublicConnectionStats,
+  PUBLIC_ACCESS_ENABLED 
+} from './middleware/publicAccess.js';
+
 import ScreenCaptureService from './services/screenCapture.js';
 import InputControlService from './services/inputControl.js';
 import SystemControlService from './services/systemControl.js';
@@ -76,8 +84,43 @@ const activeSessions = new Map();
 // WebSocket con autenticación
 io.use(authenticateSocket);
 
+// Middleware para tracking de conexiones públicas
+io.use((socket, next) => {
+  if (socket.user && socket.user.connectionType === 'public') {
+    const stats = getPublicConnectionStats();
+    if (!PUBLIC_ACCESS_ENABLED) {
+      return next(new Error('Acceso público deshabilitado'));
+    }
+    if (stats.count >= stats.max) {
+      logger.warn(`Conexión pública rechazada - límite alcanzado (${stats.max})`);
+      return next(new Error('Límite de conexiones públicas alcanzado'));
+    }
+  }
+  next();
+});
+
+
 io.on('connection', (socket) => {
-  logger.info(`Cliente conectado: ${socket.user.id} - IP: ${socket.handshake.address}`);
+  const isPublic = isPublicConnection(socket);
+  const connectionType = isPublic ? 'PÚBLICA' : 'PRIVADA';
+  
+  logger.info(`Cliente conectado (${connectionType}): ${socket.user.id} - IP: ${socket.handshake.address}`);
+  
+  // Registrar conexión pública
+  if (isPublic) {
+    registerPublicConnection(socket.user.id, socket.handshake.address);
+    socket.emit('connection_info', { 
+      type: 'public', 
+      message: 'Conexión pública establecida - Acceso limitado',
+      expiresIn: '1h'
+    });
+  } else {
+    socket.emit('connection_info', { 
+      type: 'private', 
+      message: 'Conexión privada establecida - Acceso completo' 
+    });
+  }
+
 
   // Verificar sesión única por usuario
   if (activeSessions.has(socket.user.id)) {
@@ -146,8 +189,13 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Control del sistema
+  // Control del sistema - Solo para conexiones privadas
   socket.on('system_restart', async () => {
+    if (isPublicConnection(socket)) {
+      socket.emit('error', { type: 'system', message: 'Acción no permitida en modo público' });
+      return;
+    }
+    
     try {
       logger.warn(`Reinicio solicitado por usuario: ${socket.user.id}`);
       await systemControl.restart();
@@ -159,6 +207,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('system_shutdown', async () => {
+    if (isPublicConnection(socket)) {
+      socket.emit('error', { type: 'system', message: 'Acción no permitida en modo público' });
+      return;
+    }
+    
     try {
       logger.warn(`Apagado solicitado por usuario: ${socket.user.id}`);
       await systemControl.shutdown();
@@ -168,6 +221,7 @@ io.on('connection', (socket) => {
       socket.emit('error', { type: 'system', message: err.message });
     }
   });
+
 
   // Configuración de calidad
   socket.on('set_quality', (quality) => {
@@ -189,8 +243,15 @@ io.on('connection', (socket) => {
   socket.on('disconnect', (reason) => {
     clearInterval(screenInterval);
     activeSessions.delete(socket.user.id);
+    
+    // Desregistrar conexión pública si aplica
+    if (isPublicConnection(socket)) {
+      unregisterPublicConnection(socket.user.id);
+    }
+    
     logger.info(`Cliente desconectado: ${socket.user.id} - Razón: ${reason}`);
   });
+
 
   // Logout explícito
   socket.on('logout', () => {
@@ -210,9 +271,15 @@ const PORT = process.env.PORT || 8443;
 
 httpServer.listen(PORT, () => {
   logger.info(`🚀 Servidor remoto ejecutándose en puerto ${PORT}`);
-  logger.info(`📱 Acceso: http://localhost:${PORT}`);
+  logger.info(`📱 Acceso local: http://localhost:${PORT}`);
+  if (PUBLIC_ACCESS_ENABLED) {
+    logger.info(`🌐 Acceso público: Habilitado (máx: ${process.env.MAX_PUBLIC_CONNECTIONS || 5} conexiones)`);
+  } else {
+    logger.info(`🌐 Acceso público: Deshabilitado`);
+  }
   logger.info(`🔒 Modo: ${process.env.NODE_ENV || 'development'}`);
 });
+
 
 // Manejo de señales de terminación
 process.on('SIGTERM', () => {

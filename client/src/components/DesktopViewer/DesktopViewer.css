@@ -145,3 +145,31 @@
 .canvas-wrapper::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* Public Mode Banner */
+.public-mode-banner {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  padding: 8px 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+.public-mode-banner .public-icon {
+  font-size: 1.2rem;
+}
+
+.public-mode-banner .expires-info {
+  margin-left: auto;
+  font-size: 0.8rem;
+  opacity: 0.9;
+  background: rgba(255,255,255,0.2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}

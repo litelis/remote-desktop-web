@@ -6,6 +6,8 @@ import DesktopViewer from './components/DesktopViewer/DesktopViewer';
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState(null);
+  const [connectionType, setConnectionType] = useState('private');
+
 
   useEffect(() => {
     // Verificar token existente al cargar
@@ -21,28 +23,34 @@ function App() {
       .then(data => {
         if (data.valid) {
           setToken(savedToken);
+          setConnectionType(data.connectionType || 'private');
           setIsAuthenticated(true);
         } else {
           localStorage.removeItem('remoteDesktopToken');
         }
       })
+
       .catch(() => {
         localStorage.removeItem('remoteDesktopToken');
       });
     }
   }, []);
 
-  const handleLogin = (newToken) => {
+  const handleLogin = (newToken, connType = 'private') => {
     localStorage.setItem('remoteDesktopToken', newToken);
     setToken(newToken);
+    setConnectionType(connType);
     setIsAuthenticated(true);
   };
+
 
   const handleLogout = () => {
     localStorage.removeItem('remoteDesktopToken');
     setToken(null);
+    setConnectionType('private');
     setIsAuthenticated(false);
   };
+
 
   return (
     <div className="App">
@@ -73,8 +81,13 @@ function App() {
       {!isAuthenticated ? (
         <Login onLogin={handleLogin} />
       ) : (
-        <DesktopViewer token={token} onLogout={handleLogout} />
+        <DesktopViewer 
+          token={token} 
+          onLogout={handleLogout} 
+          connectionType={connectionType}
+        />
       )}
+
     </div>
   );
 }

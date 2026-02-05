@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import './Login.css';
 
@@ -7,6 +7,25 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8443';
 export default function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isPublicMode, setIsPublicMode] = useState(false);
+  const [publicStatus, setPublicStatus] = useState({ enabled: false, availableSlots: 0 });
+
+
+  // Verificar estado de acceso público al cargar
+  useEffect(() => {
+    const checkPublicStatus = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/auth/public-status`);
+        if (response.ok) {
+          const data = await response.json();
+          setPublicStatus(data);
+        }
+      } catch (error) {
+        console.log('No se pudo verificar estado público');
+      }
+    };
+    checkPublicStatus();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +38,8 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const endpoint = isPublicMode ? '/api/auth/public-login' : '/api/auth/login';
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,8 +50,9 @@ export default function Login({ onLogin }) {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('¡Conexión establecida!');
-        onLogin(data.token);
+        const successMsg = isPublicMode ? '¡Conexión pública establecida!' : '¡Conexión establecida!';
+        toast.success(successMsg);
+        onLogin(data.token, data.connectionType || 'private');
       } else {
         toast.error(data.error || 'Contraseña incorrecta');
       }
@@ -42,6 +63,7 @@ export default function Login({ onLogin }) {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="login-container">
@@ -56,7 +78,36 @@ export default function Login({ onLogin }) {
         <h1>Escritorio Remoto</h1>
         <p className="subtitle">Acceso seguro vía navegador</p>
         
+        {/* Toggle modo público/privado */}
+        {publicStatus.enabled && (
+          <div className="connection-mode-toggle">
+            <button
+              type="button"
+              className={`mode-btn ${!isPublicMode ? 'active' : ''}`}
+              onClick={() => setIsPublicMode(false)}
+            >
+              🔒 Privado
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${isPublicMode ? 'active' : ''}`}
+              onClick={() => setIsPublicMode(true)}
+            >
+              🌐 Público
+            </button>
+          </div>
+        )}
+        
+        {isPublicMode && (
+          <div className="public-warning">
+            <span className="warning-icon">⚠️</span>
+            <p>Modo público: Acceso limitado desde internet</p>
+            <small>Slots disponibles: {publicStatus.availableSlots}</small>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit}>
+
           <div className="input-group">
             <input
               type="password"
@@ -72,17 +123,20 @@ export default function Login({ onLogin }) {
           <button 
             type="submit" 
             disabled={loading}
-            className={`btn-primary ${loading ? 'loading' : ''}`}
+            className={`btn-primary ${loading ? 'loading' : ''} ${isPublicMode ? 'public-mode' : ''}`}
           >
             {loading ? (
               <>
                 <span className="spinner"></span>
                 Conectando...
               </>
+            ) : isPublicMode ? (
+              'Conectar en Modo Público'
             ) : (
               'Acceder al Sistema'
             )}
           </button>
+
         </form>
 
         <div className="security-info">
@@ -94,11 +148,22 @@ export default function Login({ onLogin }) {
             <span className="icon">🛡️</span>
             <span>Acceso auditado</span>
           </div>
+          {isPublicMode && (
+            <div className="security-item public">
+              <span className="icon">🌐</span>
+              <span>Acceso público limitado</span>
+            </div>
+          )}
         </div>
 
-        <p className="warning">
-          ⚠️ Acceso restringido. Todas las acciones son registradas.
+        <p className={`warning ${isPublicMode ? 'public-warning-text' : ''}`}>
+          {isPublicMode ? (
+            <>⚠️ Modo público: Sin acceso a reinicio/apagado. Sesión de 1 hora máximo.</>
+          ) : (
+            <>⚠️ Acceso restringido. Todas las acciones son registradas.</>
+          )}
         </p>
+
       </div>
     </div>
   );

@@ -156,7 +156,26 @@
   margin: 0 5px;
 }
 
+/* Public Mode Indicator */
+.public-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-right: 10px;
+}
+
+.public-indicator span {
+  font-size: 1rem;
+}
+
 /* Responsive */
+
 @media (max-width: 768px) {
   .control-bar {
     flex-wrap: wrap;
