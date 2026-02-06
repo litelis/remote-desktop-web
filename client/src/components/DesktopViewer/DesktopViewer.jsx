@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 import ControlBar from '../ControlBar/ControlBar';
+import FileTransfer from '../FileTransfer/FileTransfer';
 import './DesktopViewer.css';
+
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8443';
 const WS_URL = process.env.REACT_APP_WS_URL || API_URL;
@@ -316,6 +318,13 @@ export default function DesktopViewer({ token, onLogout, connectionType = 'priva
           </span>
         </div>
       </div>
+
+      {connected && (
+        <FileTransfer 
+          socket={socketRef.current} 
+          isPublic={isPublic}
+        />
+      )}
     </div>
   );
 }

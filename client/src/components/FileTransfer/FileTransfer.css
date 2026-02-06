@@ -1,0 +1,288 @@
+.file-transfer-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 350px;
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid #2d2d44;
+  z-index: 1000;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.file-transfer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #16213e;
+  border-bottom: 1px solid #2d2d44;
+}
+
+.file-transfer-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-transfer-header h3::before {
+  content: '📁';
+  font-size: 16px;
+}
+
+.file-transfer-toggle {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.file-transfer-toggle:hover {
+  background: #2d2d44;
+  color: #fff;
+}
+
+.file-transfer-content {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.drop-zone {
+  border: 2px dashed #3d3d5c;
+  border-radius: 8px;
+  padding: 30px 20px;
+  margin: 16px;
+  text-align: center;
+  transition: all 0.3s;
+  cursor: pointer;
+  background: #0f0f1a;
+}
+
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: #4a9eff;
+  background: #1a1a2e;
+}
+
+.drop-zone.drag-over {
+  transform: scale(1.02);
+}
+
+.drop-zone-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.7;
+}
+
+.drop-zone-text {
+  color: #a0a0a0;
+  font-size: 14px;
+  margin: 0;
+}
+
+.drop-zone-text strong {
+  color: #4a9eff;
+  display: block;
+  margin-top: 4px;
+}
+
+.file-list {
+  padding: 0 16px 16px;
+}
+
+.file-list h4 {
+  color: #a0a0a0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px 0;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: #0f0f1a;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #2d2d44;
+  transition: all 0.2s;
+}
+
+.file-item:hover {
+  border-color: #3d3d5c;
+  background: #16213e;
+}
+
+.file-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #2d2d44;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  color: #707070;
+  font-size: 11px;
+  margin: 0;
+}
+
+.file-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.file-btn {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-btn:hover {
+  background: #2d2d44;
+  color: #fff;
+}
+
+.file-btn.download:hover {
+  color: #4ade80;
+}
+
+.file-btn.delete:hover {
+  color: #ef4444;
+}
+
+.upload-progress {
+  padding: 16px;
+  border-top: 1px solid #2d2d44;
+}
+
+.progress-item {
+  margin-bottom: 12px;
+}
+
+.progress-item:last-child {
+  margin-bottom: 0;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.progress-filename {
+  color: #fff;
+  font-size: 12px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.progress-percentage {
+  color: #4a9eff;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.progress-bar {
+  height: 4px;
+  background: #2d2d44;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a9eff, #7c3aed);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 30px 20px;
+  color: #707070;
+}
+
+.empty-state-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 13px;
+  margin: 0;
+}
+
+.file-transfer-minimized {
+  width: auto;
+  min-width: 50px;
+}
+
+.file-transfer-minimized .file-transfer-content {
+  display: none;
+}
+
+.file-input {
+  display: none;
+}
+
+/* Scrollbar styling */
+.file-transfer-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.file-transfer-content::-webkit-scrollbar-track {
+  background: #0f0f1a;
+}
+
+.file-transfer-content::-webkit-scrollbar-thumb {
+  background: #2d2d44;
+  border-radius: 3px;
+}
+
+.file-transfer-content::-webkit-scrollbar-thumb:hover {
+  background: #3d3d5c;
+}

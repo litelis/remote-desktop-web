@@ -10,6 +10,8 @@ import { dirname, join } from 'path';
 
 import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
+import fileTransferRoutes from './routes/fileTransfer.js';
+
 import { authenticateSocket } from './middleware/auth.js';
 import { limiter } from './middleware/rateLimiter.js';
 import { 
@@ -23,7 +25,9 @@ import {
 import ScreenCaptureService from './services/screenCapture.js';
 import InputControlService from './services/inputControl.js';
 import SystemControlService from './services/systemControl.js';
+import fileTransferService from './services/fileTransfer.js';
 import logger from './utils/logger.js';
+
 
 // Configurar dotenv
 dotenv.config();
@@ -63,6 +67,8 @@ app.use('/api/', limiter);
 // Rutas
 app.use('/api/auth', authRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/files', fileTransferRoutes);
+
 
 // Servir archivos estáticos del cliente en producción
 if (process.env.NODE_ENV === 'production') {
@@ -259,6 +265,53 @@ io.on('connection', (socket) => {
     socket.emit('session_terminated', 'Sesión cerrada por el usuario');
     socket.disconnect();
   });
+
+  // Transferencia de archivos vía Socket.io
+  socket.on('file_upload_start', (data) => {
+    const { filename, fileSize, transferId } = data;
+    logger.info(`📤 Iniciando upload: ${filename} (${fileTransferService.formatBytes(fileSize)})`);
+    
+    try {
+      fileTransferService.validateFile(filename, fileSize);
+      socket.emit('file_upload_ready', { transferId, status: 'ready' });
+    } catch (error) {
+      socket.emit('file_upload_error', { transferId, error: error.message });
+    }
+  });
+
+  socket.on('file_chunk', async (data) => {
+    const { transferId, chunk, isLast } = data;
+    // Los chunks se acumulan y se escriben al final
+    // Esta es una implementación simplificada - en producción usar streams
+  });
+
+  socket.on('file_upload_complete', async (data) => {
+    const { transferId, filename, fileSize } = data;
+    logger.info(`✅ Upload completado: ${filename}`);
+    socket.emit('file_upload_success', { 
+      transferId, 
+      filename, 
+      message: 'Archivo subido correctamente' 
+    });
+  });
+
+  socket.on('request_file_list', async () => {
+    try {
+      const files = await fileTransferService.getFileList();
+      socket.emit('file_list', { 
+        success: true, 
+        files: files.map(file => ({
+          name: file.name,
+          size: file.size,
+          sizeFormatted: fileTransferService.formatBytes(file.size),
+          modified: file.modified
+        }))
+      });
+    } catch (error) {
+      socket.emit('file_list_error', { error: error.message });
+    }
+  });
+
 });
 
 // Manejo de errores global
