@@ -28,8 +28,8 @@ import SystemControlService from './services/systemControl.js';
 import fileTransferService from './services/fileTransfer.js';
 import clipboardService from './services/clipboard.js';
 import audioCaptureService from './services/audioCapture.js';
+import chatService from './services/chat.js';
 import logger from './utils/logger.js';
-
 
 // Configurar dotenv
 dotenv.config();
@@ -141,7 +141,6 @@ io.on('connection', (socket) => {
   let audioStreamId = null;
   
   const startScreenStream = () => {
-
     screenInterval = setInterval(async () => {
       try {
         const frame = await screenCapture.capture();
@@ -255,6 +254,13 @@ io.on('connection', (socket) => {
       audioCaptureService.stopCapture(audioStreamId);
     }
     
+    // Desregistrar del chat
+    const user = chatService.unregisterUser(socket.user.id);
+    if (user) {
+      socket.broadcast.emit('chat_user_left', { id: socket.user.id, username: user.username });
+      socket.broadcast.emit('chat_users', chatService.getConnectedUsersList());
+    }
+    
     // Desregistrar conexión pública si aplica
     if (isPublicConnection(socket)) {
       unregisterPublicConnection(socket.user.id);
@@ -262,7 +268,6 @@ io.on('connection', (socket) => {
     
     logger.info(`Cliente desconectado: ${socket.user.id} - Razón: ${reason}`);
   });
-
 
   // Logout explícito
   socket.on('logout', () => {
@@ -320,7 +325,6 @@ io.on('connection', (socket) => {
   // Streaming de audio
   
   socket.on('audio_start', async (data) => {
-
     if (isPublicConnection(socket)) {
       socket.emit('audio_error', { message: 'Audio no disponible en modo público' });
       return;
@@ -389,7 +393,6 @@ io.on('connection', (socket) => {
 
   // Sincronización de portapapeles
   socket.on('clipboard_get', async () => {
-
     try {
       const content = await clipboardService.getClipboard();
       socket.emit('clipboard_content', content);
@@ -418,6 +421,79 @@ io.on('connection', (socket) => {
       socket.emit('clipboard_error', { message: error.message });
       logger.error('Error estableciendo portapapeles:', error);
     }
+  });
+
+  // Chat integrado
+  socket.on('chat_join', (data) => {
+    const username = data?.username || `Usuario_${socket.user.id.slice(0, 6)}`;
+    const users = chatService.registerUser(socket.user.id, socket.id, username);
+    
+    // Notificar al usuario que se unió
+    socket.emit('chat_joined', { id: socket.user.id, username });
+    socket.emit('chat_users', users);
+    
+    // Notificar a otros usuarios
+    socket.broadcast.emit('chat_user_joined', { id: socket.user.id, username });
+    socket.broadcast.emit('chat_users', users);
+    
+    logger.info(`💬 Usuario ${username} se unió al chat`);
+  });
+
+  socket.on('chat_leave', () => {
+    const user = chatService.unregisterUser(socket.user.id);
+    if (user) {
+      socket.broadcast.emit('chat_user_left', { id: socket.user.id, username: user.username });
+      socket.broadcast.emit('chat_users', chatService.getConnectedUsersList());
+      logger.info(`💬 Usuario ${user.username} salió del chat`);
+    }
+  });
+
+  socket.on('chat_send', (data) => {
+    const { content, to, type } = data;
+    
+    if (!content || !content.trim()) {
+      socket.emit('chat_error', { message: 'El mensaje no puede estar vacío' });
+      return;
+    }
+    
+    if (type === 'private' && to) {
+      // Mensaje privado
+      const message = chatService.sendPrivateMessage(content, socket.user.id, to);
+      
+      if (message.error) {
+        socket.emit('chat_error', { message: message.error });
+        return;
+      }
+      
+      // Enviar al remitente
+      socket.emit('chat_message', message);
+      
+      // Enviar al destinatario
+      const targetSocket = activeSessions.get(to);
+      if (targetSocket) {
+        targetSocket.emit('chat_message', message);
+      }
+      
+    } else {
+      // Mensaje broadcast
+      const message = chatService.broadcastMessage(content, socket.user.id);
+      
+      // Enviar a todos los usuarios conectados
+      io.emit('chat_message', message);
+    }
+  });
+
+  socket.on('chat_get_history', () => {
+    const history = chatService.getHistory(50);
+    socket.emit('chat_history', history);
+  });
+
+  socket.on('chat_typing', (data) => {
+    // Broadcast a todos excepto al remitente
+    socket.broadcast.emit('chat_user_typing', {
+      userId: socket.user.id,
+      isTyping: data.isTyping
+    });
   });
 });
 
