@@ -4,7 +4,9 @@ import toast from 'react-hot-toast';
 import ControlBar from '../ControlBar/ControlBar';
 import FileTransfer from '../FileTransfer/FileTransfer';
 import ClipboardSync from '../ClipboardSync/ClipboardSync';
+import AudioStream from '../AudioStream/AudioStream';
 import './DesktopViewer.css';
+
 
 
 
@@ -331,8 +333,13 @@ export default function DesktopViewer({ token, onLogout, connectionType = 'priva
             socket={socketRef.current} 
             isPublic={isPublic}
           />
+          <AudioStream 
+            socket={socketRef.current} 
+            isPublic={isPublic}
+          />
         </>
       )}
+
     </div>
   );
 }

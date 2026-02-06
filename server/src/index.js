@@ -27,7 +27,9 @@ import InputControlService from './services/inputControl.js';
 import SystemControlService from './services/systemControl.js';
 import fileTransferService from './services/fileTransfer.js';
 import clipboardService from './services/clipboard.js';
+import audioCaptureService from './services/audioCapture.js';
 import logger from './utils/logger.js';
+
 
 // Configurar dotenv
 dotenv.config();
@@ -136,8 +138,10 @@ io.on('connection', (socket) => {
 
   // Iniciar transmisión de pantalla
   let screenInterval;
+  let audioStreamId = null;
   
   const startScreenStream = () => {
+
     screenInterval = setInterval(async () => {
       try {
         const frame = await screenCapture.capture();
@@ -246,6 +250,11 @@ io.on('connection', (socket) => {
     clearInterval(screenInterval);
     activeSessions.delete(socket.user.id);
     
+    // Detener stream de audio si existe
+    if (audioStreamId) {
+      audioCaptureService.stopCapture(audioStreamId);
+    }
+    
     // Desregistrar conexión pública si aplica
     if (isPublicConnection(socket)) {
       unregisterPublicConnection(socket.user.id);
@@ -253,6 +262,7 @@ io.on('connection', (socket) => {
     
     logger.info(`Cliente desconectado: ${socket.user.id} - Razón: ${reason}`);
   });
+
 
   // Logout explícito
   socket.on('logout', () => {
@@ -307,8 +317,79 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Streaming de audio
+  
+  socket.on('audio_start', async (data) => {
+
+    if (isPublicConnection(socket)) {
+      socket.emit('audio_error', { message: 'Audio no disponible en modo público' });
+      return;
+    }
+    
+    try {
+      // Verificar FFmpeg
+      const hasFFmpeg = await audioCaptureService.checkFFmpeg();
+      if (!hasFFmpeg) {
+        socket.emit('audio_error', { message: 'FFmpeg no está instalado en el servidor' });
+        return;
+      }
+      
+      // Detener stream anterior si existe
+      if (audioStreamId) {
+        audioCaptureService.stopCapture(audioStreamId);
+      }
+      
+      // Configurar calidad
+      const quality = data?.quality || 'medium';
+      audioCaptureService.setQuality(quality);
+      
+      // Generar ID único para este stream
+      audioStreamId = `audio_${socket.user.id}_${Date.now()}`;
+      
+      // Iniciar captura
+      const success = audioCaptureService.startCapture(
+        audioStreamId,
+        (audioData) => {
+          // Enviar datos de audio al cliente
+          socket.emit('audio_data', { audio: audioData, timestamp: Date.now() });
+        },
+        (error) => {
+          logger.error(`Error en stream de audio: ${error.message}`);
+          socket.emit('audio_error', { message: error.message });
+        }
+      );
+      
+      if (success) {
+        socket.emit('audio_started', { streamId: audioStreamId, quality });
+        logger.info(`🎵 Audio streaming iniciado para ${socket.user.id} (calidad: ${quality})`);
+      } else {
+        socket.emit('audio_error', { message: 'No se pudo iniciar la captura de audio' });
+      }
+      
+    } catch (error) {
+      logger.error('Error iniciando audio:', error);
+      socket.emit('audio_error', { message: error.message });
+    }
+  });
+  
+  socket.on('audio_stop', () => {
+    if (audioStreamId) {
+      audioCaptureService.stopCapture(audioStreamId);
+      audioStreamId = null;
+      socket.emit('audio_stopped');
+      logger.info(`🛑 Audio streaming detenido para ${socket.user.id}`);
+    }
+  });
+  
+  socket.on('audio_set_quality', (data) => {
+    const quality = data?.quality || 'medium';
+    audioCaptureService.setQuality(quality);
+    logger.info(`🎵 Calidad de audio cambiada a: ${quality}`);
+  });
+
   // Sincronización de portapapeles
   socket.on('clipboard_get', async () => {
+
     try {
       const content = await clipboardService.getClipboard();
       socket.emit('clipboard_content', content);
