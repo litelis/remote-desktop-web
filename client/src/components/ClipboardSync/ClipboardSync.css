@@ -1,0 +1,249 @@
+.clipboard-sync-container {
+  position: fixed;
+  bottom: 20px;
+  right: 380px;
+  width: 300px;
+  background: #1a1a2e;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid #2d2d44;
+  z-index: 1000;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.clipboard-sync-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #16213e;
+  border-bottom: 1px solid #2d2d44;
+}
+
+.clipboard-sync-header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clipboard-sync-header h3::before {
+  content: '📋';
+  font-size: 16px;
+}
+
+.clipboard-sync-toggle {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.clipboard-sync-toggle:hover {
+  background: #2d2d44;
+  color: #fff;
+}
+
+.clipboard-sync-content {
+  padding: 16px;
+}
+
+.clipboard-preview {
+  background: #0f0f1a;
+  border: 1px solid #2d2d44;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  min-height: 60px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.clipboard-preview-label {
+  color: #707070;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 8px 0;
+}
+
+.clipboard-preview-content {
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+  font-family: 'Consolas', 'Monaco', monospace;
+}
+
+.clipboard-preview-empty {
+  color: #505050;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+.clipboard-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.clipboard-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.clipboard-btn-primary {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.clipboard-btn-primary:hover {
+  background: #3a8eef;
+  transform: translateY(-1px);
+}
+
+.clipboard-btn-secondary {
+  background: #2d2d44;
+  color: #a0a0a0;
+}
+
+.clipboard-btn-secondary:hover {
+  background: #3d3d5c;
+  color: #fff;
+}
+
+.clipboard-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #0f0f1a;
+  border-radius: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #707070;
+}
+
+.clipboard-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulse 2s infinite;
+}
+
+.clipboard-status-indicator.syncing {
+  background: #fbbf24;
+  animation: spin 1s linear infinite;
+}
+
+.clipboard-status-indicator.error {
+  background: #ef4444;
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.clipboard-sync-minimized {
+  width: auto;
+  min-width: 50px;
+}
+
+.clipboard-sync-minimized .clipboard-sync-content {
+  display: none;
+}
+
+.clipboard-toast {
+  position: fixed;
+  bottom: 100px;
+  right: 20px;
+  background: #1a1a2e;
+  border: 1px solid #4ade80;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+  z-index: 1001;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.clipboard-toast-icon {
+  font-size: 18px;
+}
+
+.clipboard-toast-message {
+  flex: 1;
+}
+
+.clipboard-toast-close {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.clipboard-toast-close:hover {
+  color: #fff;
+}
+
+/* Scrollbar styling */
+.clipboard-preview::-webkit-scrollbar {
+  width: 6px;
+}
+
+.clipboard-preview::-webkit-scrollbar-track {
+  background: #0f0f1a;
+}
+
+.clipboard-preview::-webkit-scrollbar-thumb {
+  background: #2d2d44;
+  border-radius: 3px;
+}
+
+.clipboard-preview::-webkit-scrollbar-thumb:hover {
+  background: #3d3d5c;
+}

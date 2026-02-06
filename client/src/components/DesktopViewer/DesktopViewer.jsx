@@ -3,7 +3,9 @@ import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 import ControlBar from '../ControlBar/ControlBar';
 import FileTransfer from '../FileTransfer/FileTransfer';
+import ClipboardSync from '../ClipboardSync/ClipboardSync';
 import './DesktopViewer.css';
+
 
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8443';
@@ -320,10 +322,16 @@ export default function DesktopViewer({ token, onLogout, connectionType = 'priva
       </div>
 
       {connected && (
-        <FileTransfer 
-          socket={socketRef.current} 
-          isPublic={isPublic}
-        />
+        <>
+          <FileTransfer 
+            socket={socketRef.current} 
+            isPublic={isPublic}
+          />
+          <ClipboardSync 
+            socket={socketRef.current} 
+            isPublic={isPublic}
+          />
+        </>
       )}
     </div>
   );

@@ -26,8 +26,8 @@ import ScreenCaptureService from './services/screenCapture.js';
 import InputControlService from './services/inputControl.js';
 import SystemControlService from './services/systemControl.js';
 import fileTransferService from './services/fileTransfer.js';
+import clipboardService from './services/clipboard.js';
 import logger from './utils/logger.js';
-
 
 // Configurar dotenv
 dotenv.config();
@@ -69,7 +69,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/files', fileTransferRoutes);
 
-
 // Servir archivos estáticos del cliente en producción
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(join(__dirname, '../../client/build')));
@@ -105,7 +104,6 @@ io.use((socket, next) => {
   next();
 });
 
-
 io.on('connection', (socket) => {
   const isPublic = isPublicConnection(socket);
   const connectionType = isPublic ? 'PÚBLICA' : 'PRIVADA';
@@ -126,7 +124,6 @@ io.on('connection', (socket) => {
       message: 'Conexión privada establecida - Acceso completo' 
     });
   }
-
 
   // Verificar sesión única por usuario
   if (activeSessions.has(socket.user.id)) {
@@ -228,7 +225,6 @@ io.on('connection', (socket) => {
     }
   });
 
-
   // Configuración de calidad
   socket.on('set_quality', (quality) => {
     screenCapture.setQuality(quality);
@@ -257,7 +253,6 @@ io.on('connection', (socket) => {
     
     logger.info(`Cliente desconectado: ${socket.user.id} - Razón: ${reason}`);
   });
-
 
   // Logout explícito
   socket.on('logout', () => {
@@ -312,6 +307,37 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Sincronización de portapapeles
+  socket.on('clipboard_get', async () => {
+    try {
+      const content = await clipboardService.getClipboard();
+      socket.emit('clipboard_content', content);
+      logger.debug(`📋 Portapapeles enviado a ${socket.user.id}`);
+    } catch (error) {
+      socket.emit('clipboard_error', { message: error.message });
+      logger.error('Error obteniendo portapapeles:', error);
+    }
+  });
+
+  socket.on('clipboard_set', async (data) => {
+    try {
+      const { content, type } = data;
+      clipboardService.validateContent(content, type || 'text/plain');
+      await clipboardService.setClipboard(content, type);
+      socket.emit('clipboard_set_success', { timestamp: Date.now() });
+      logger.info(`📋 Portapapeles actualizado por ${socket.user.id}`);
+      
+      // Notificar a otros clientes conectados (excepto al remitente)
+      socket.broadcast.emit('clipboard_updated', {
+        type: type || 'text/plain',
+        timestamp: Date.now(),
+        source: socket.user.id
+      });
+    } catch (error) {
+      socket.emit('clipboard_error', { message: error.message });
+      logger.error('Error estableciendo portapapeles:', error);
+    }
+  });
 });
 
 // Manejo de errores global
@@ -332,7 +358,6 @@ httpServer.listen(PORT, () => {
   }
   logger.info(`🔒 Modo: ${process.env.NODE_ENV || 'development'}`);
 });
-
 
 // Manejo de señales de terminación
 process.on('SIGTERM', () => {
