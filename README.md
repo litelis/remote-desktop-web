@@ -447,32 +447,324 @@ npm run docker:down          # Detiene stack
 
 ---
 
-## 🐳 Docker
 
-### Producción con Docker Compose
+## 🐳 Docker - Tutorial Completo para Principiantes
 
-```yaml
-# docker-compose.yml incluye:
-# - Server Node.js optimizado
-# - Variables de entorno configurables
-# - Volúmenes persistentes para logs
-# - Red bridge aislada
+Docker te permite ejecutar el proyecto sin instalar Node.js ni ninguna dependencia en tu computadora. Es ideal para producción o si tienes problemas con la instalación nativa.
+
+---
+
+### 📥 Paso 1: Instalar Docker
+
+#### **Windows:**
+1. Ve a [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+2. Descarga **Docker Desktop for Windows**
+3. Ejecuta el instalador (requiere reiniciar)
+4. Abre Docker Desktop desde el menú Inicio
+5. Espera a que diga "Docker Desktop is running" (puede tardar unos minutos la primera vez)
+
+**Verificar instalación:**
+```cmd
+docker --version
+```
+Debe mostrar algo como: `Docker version 24.0.7, build afdd53b`
+
+#### **Linux (Ubuntu/Debian):**
+```bash
+# Actualizar repositorios
+sudo apt-get update
+
+# Instalar dependencias
+sudo apt-get install ca-certificates curl gnupg
+
+# Añadir llave GPG oficial de Docker
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Añadir repositorio
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Instalar Docker
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Verificar
+docker --version
+sudo docker run hello-world
 ```
 
-```bash
-# Construir e iniciar
-docker-compose up -d --build
+#### **macOS:**
+1. Descarga [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop)
+2. Abre el archivo `.dmg` y arrastra Docker a Applications
+3. Abre Docker Desktop desde Applications
+4. Espera a que inicie completamente
 
-# Ver logs
+---
+
+### 🚀 Paso 2: Iniciar el Proyecto con Docker
+
+#### **Opción A: Primera vez (construir e iniciar)**
+
+```cmd
+# 1. Clonar el repositorio (si no lo has hecho)
+git clone https://github.com/litelis/remote-desktop-web.git
+cd remote-desktop-web
+
+# 2. Iniciar con Docker Compose
+docker-compose up -d --build
+```
+
+**Qué hace este comando:**
+- `-d` = Detached (corre en segundo plano, no bloquea la terminal)
+- `--build` = Construye las imágenes la primera vez
+
+**Verificar que está funcionando:**
+```cmd
+docker-compose ps
+```
+Debe mostrar el servicio `server` con estado `Up`
+
+#### **Opción B: Si ya lo construiste antes (solo iniciar)**
+
+```cmd
+docker-compose up -d
+```
+
+---
+
+### 🌐 Paso 3: Usar la Aplicación
+
+Una vez iniciado, accede en tu navegador:
+
+```
+http://localhost:8443
+```
+
+**Credenciales por defecto:**
+- Contraseña: `admin123` (cámbiala en producción)
+
+---
+
+### 📋 Comandos Esenciales de Docker
+
+#### **Ver estado de los contenedores**
+```cmd
+docker-compose ps
+```
+
+#### **Ver logs (mensajes del servidor)**
+```cmd
+# Ver logs en tiempo real
 docker-compose logs -f server
 
-# Detener
+# Ver últimos 100 logs
+docker-compose logs --tail=100 server
+
+# Ver logs de todos los servicios
+docker-compose logs
+```
+
+#### **Detener el proyecto**
+```cmd
+docker-compose down
+```
+
+#### **Reiniciar el proyecto**
+```cmd
+docker-compose restart
+```
+
+#### **Actualizar a nueva versión**
+```cmd
+# 1. Descargar cambios del código
+git pull
+
+# 2. Reconstruir con los cambios nuevos
+docker-compose up -d --build
+
+# O si solo cambió la imagen base:
+docker-compose pull
+docker-compose up -d
+```
+
+---
+
+### 🔧 Paso 4: Configurar Variables de Entorno
+
+Docker usa el archivo `server/.env`. Si no existe, créalo:
+
+```cmd
+# Windows
+copy server\.env.example server\.env
+notepad server\.env
+
+# Linux/Mac
+cp server/.env.example server/.env
+nano server/.env
+```
+
+**Variables importantes para Docker:**
+```env
+PORT=8443
+ADMIN_PASSWORD=tu_contraseña_segura
+JWT_SECRET=una-clave-secreta-larga-de-64-caracteres-minimo
+NODE_ENV=production
+```
+
+**Aplicar cambios:**
+```cmd
+docker-compose restart
+```
+
+---
+
+### 💾 Paso 5: Persistencia de Datos
+
+Docker guarda automáticamente:
+- ✅ Logs en `server/logs/`
+- ✅ Archivos de sesión
+
+**No se pierden al reiniciar** gracias a los volúmenes configurados en `docker-compose.yml`.
+
+---
+
+### 🛠️ Solución de Problemas con Docker
+
+#### **Error: "Docker daemon is not running"**
+```cmd
+# Windows/Mac: Abre Docker Desktop y espera a que inicie
+# Linux:
+sudo systemctl start docker
+```
+
+#### **Error: "Port 8443 is already allocated"**
+```cmd
+# Ver qué usa el puerto
+netstat -ano | findstr :8443
+
+# O cambia el puerto en docker-compose.yml
+# ports:
+#   - "8444:8443"  # Usa 8444 en tu máquina
+```
+
+#### **Error: "Cannot connect to the Docker daemon"**
+```cmd
+# Linux: Añade tu usuario al grupo docker
+sudo usermod -aG docker $USER
+# Cierra sesión y vuelve a entrar
+```
+
+#### **Limpiar todo y empezar de cero**
+```cmd
+# Detener y eliminar contenedores
 docker-compose down
 
-# Actualizar
-docker-compose pull
+# Eliminar imágenes (opcional)
+docker rmi remote-desktop-web_server
+
+# Eliminar volúmenes (⚠️ pierdes logs)
+docker volume prune
+
+# Reconstruir desde cero
 docker-compose up -d --build
 ```
+
+#### **Ver uso de recursos**
+```cmd
+docker stats
+```
+
+---
+
+### 📊 Comparativa: Docker vs Instalación Nativa
+
+| Aspecto | Docker | Instalación Nativa |
+|---------|--------|-------------------|
+| **Instalación** | Solo instalar Docker | Instalar Node.js, Python, build tools |
+| **Robotjs/errores nativos** | ✅ No hay problemas | ❌ Puede fallar la compilación |
+| **Aislamiento** | ✅ Procesos aislados | ❌ En tu sistema directamente |
+| **Recursos** | Usa más RAM (~200MB extra) | Más ligero |
+| **Actualización** | `docker-compose up -d --build` | `git pull` + reinstalar dependencias |
+| **Logs** | `docker-compose logs` | Archivos en `server/logs/` |
+| **Ideal para** | Producción, principiantes | Desarrollo, debugging |
+
+---
+
+### 🎯 Flujo de Trabajo Recomendado con Docker
+
+#### **Primera vez:**
+```cmd
+git clone https://github.com/litelis/remote-desktop-web.git
+cd remote-desktop-web
+docker-compose up -d --build
+# Abre http://localhost:8443
+```
+
+#### **Uso diario:**
+```cmd
+# Ver que está corriendo
+docker-compose ps
+
+# Ver logs si hay problemas
+docker-compose logs -f server
+
+# Detener al terminar
+docker-compose down
+```
+
+#### **Actualizar:**
+```cmd
+git pull
+docker-compose up -d --build
+```
+
+#### **Backup de logs antes de limpiar:**
+```cmd
+# Copiar logs fuera del contenedor
+docker cp remote-desktop-web_server_1:/app/logs ./backup-logs
+docker-compose down
+```
+
+---
+
+### 📚 Glosario Docker para Principiantes
+
+| Término | Significado |
+|---------|-------------|
+| **Contenedor** | Una "caja" aislada que ejecuta tu aplicación |
+| **Imagen** | La "plantilla" para crear contenedores |
+| **Docker Compose** | Herramienta para manejar múltiples contenedores |
+| **Volumen** | Carpeta compartida entre tu PC y el contenedor |
+| **Puerto** | "Puerta" de comunicación (8443 en este proyecto) |
+| **Logs** | Registro de mensajes y errores del programa |
+| **Build** | Construir la imagen desde el código fuente |
+| **Daemon** | El servicio de Docker que corre en segundo plano |
+
+---
+
+### ✅ Checklist de Verificación
+
+Después de instalar, verifica que todo funciona:
+
+- [ ] `docker --version` muestra la versión
+- [ ] `docker-compose ps` muestra el servicio "Up"
+- [ ] Acceder a `http://localhost:8443` muestra el login
+- [ ] Puedes iniciar sesión con la contraseña
+- [ ] `docker-compose logs` no muestra errores rojos
+- [ ] Puedes detener con `docker-compose down` y reiniciar
+
+---
+
+### 🆘 ¿Necesitas más ayuda?
+
+- 📖 [Documentación oficial de Docker](https://docs.docker.com/get-started/)
+- 🐛 [GitHub Issues](https://github.com/litelis/remote-desktop-web/issues)
+- 💬 Comando de diagnóstico completo:
+```cmd
+docker-compose ps && docker-compose logs --tail=50 server
+```
+
 
 ---
 
