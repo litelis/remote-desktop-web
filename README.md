@@ -221,7 +221,207 @@ REACT_APP_WS_URL=ws://localhost:8443
 
 ---
 
-## 📦 Scripts Disponibles
+
+## 📚 Tutorial Completo de Uso de Scripts
+
+Esta sección explica en detalle todas las opciones disponibles para ejecutar el proyecto.
+
+### 🪟 Scripts Batch (Windows)
+
+#### `scripts\install.bat` - Instalador Automático
+
+**Uso básico:**
+```cmd
+scripts\install.bat
+```
+
+**Qué hace:**
+1. Verifica permisos de administrador (eleva automáticamente si es necesario)
+2. Comprueba Node.js (lo descarga e instala si falta)
+3. Instala dependencias globales (node-gyp, windows-build-tools, nodemon)
+4. Instala dependencias del proyecto (raíz, server, client)
+5. Configura archivos `.env` automáticamente
+6. Genera JWT_SECRET aleatorio
+
+**Manejo de errores:**
+- Si falla la instalación del servidor (robotjs/node-gyp), muestra soluciones específicas
+- Continúa con la instalación incluso si hay errores menores
+- Al final muestra resumen de errores encontrados
+- **No se cierra solo**: Espera que presiones ENTER para ver los mensajes
+
+**Solución de problemas comunes:**
+```cmd
+# Si falla robotjs por falta de Visual Studio Build Tools:
+npm install --global windows-build-tools
+
+# O instala manualmente desde:
+# https://visualstudio.microsoft.com/visual-cpp-build-tools/
+```
+
+---
+
+#### `scripts\setup-ssl.bat` - Configurador de Certificados SSL
+
+**Uso básico:**
+```cmd
+scripts\setup-ssl.bat
+```
+
+**Qué hace:**
+1. Verifica/instala OpenSSL
+2. Crea directorio `ssl/`
+3. Genera certificado autofirmado (válido 365 días)
+4. Configura permisos de seguridad
+
+**Archivos generados:**
+- `ssl/cert.pem` - Certificado público
+- `ssl/key.pem` - Clave privada (¡mantener segura!)
+
+**Uso en producción:**
+Edita `server/.env`:
+```env
+SSL_CERT_PATH=./ssl/cert.pem
+SSL_KEY_PATH=./ssl/key.pem
+HTTPS_ENABLED=true
+```
+
+**⚠️ Advertencia:** Los navegadores mostrarán advertencia de seguridad con certificados autofirmados. Para producción, usa certificados de Let's Encrypt o similar.
+
+---
+
+### 🐍 Scripts Python (Cross-Platform)
+
+#### `start_project.py` - Lanzador de Desarrollo
+
+**Opciones disponibles:**
+
+| Opción | Descripción | Ejemplo |
+|--------|-------------|---------|
+| *(sin opciones)* | Inicia el proyecto (verifica dependencias primero) | `python start_project.py` |
+| `-i`, `--install` | Instala dependencias antes de iniciar | `python start_project.py -i` |
+| `--check-only` | Solo verifica prerrequisitos, no inicia | `python start_project.py --check-only` |
+| `--debug` | Muestra información detallada de errores | `python start_project.py --debug` |
+
+**Ejemplos de uso:**
+
+```cmd
+# Inicio normal (recomendado para uso diario)
+python start_project.py
+
+# Primera instalación o después de limpiar node_modules
+python start_project.py --install
+
+# Verificar que todo está instalado correctamente
+python start_project.py --check-only
+
+# Depurar problemas (muestra tracebacks completos)
+python start_project.py --debug
+
+# Instalar y verificar en un solo comando
+python start_project.py -i --check-only
+```
+
+**Características:**
+- ✅ Output coloreado por servicio (SERVER en verde, CLIENT en cyan)
+- ✅ Verifica Node.js, npm y Python automáticamente
+- ✅ Manejo graceful de Ctrl+C (detiene ambos servicios limpiamente)
+- ✅ Muestra URLs de acceso al iniciar
+- ✅ No se detiene ante errores menores (intenta continuar)
+
+---
+
+#### `update.py` - Actualizador desde GitHub
+
+**Opciones disponibles:**
+
+| Opción | Descripción | Ejemplo |
+|--------|-------------|---------|
+| *(sin opciones)* | Verifica y pregunta para actualizar | `python update.py` |
+| `-f`, `--force` | Actualiza sin preguntar (silencioso) | `python update.py --force` |
+| `-c`, `--check` | Solo verifica, no actualiza | `python update.py --check` |
+| `--debug` | Muestra información detallada de errores | `python update.py --debug` |
+
+**Ejemplos de uso:**
+
+```cmd
+# Verificar si hay actualizaciones (solo consulta)
+python update.py --check
+
+# Actualización interactiva normal (pregunta confirmación)
+python update.py
+
+# Actualización automática (ideal para scripts/Cron)
+python update.py --force
+
+# Verificar con información detallada de errores
+python update.py --check --debug
+
+# Forzar actualización y subir cambios locales
+python update.py --force
+```
+
+**Flujo de trabajo:**
+1. Consulta último commit en GitHub API
+2. Compara con versión local (archivo `.version`)
+3. Si hay diferencias, pregunta (o fuerza con `--force`)
+4. Ejecuta `git pull` para descargar cambios
+5. Realiza `git add`, `commit`, `push` automáticamente
+6. Actualiza archivo `.version` con nuevo commit
+
+**Archivos gestionados:**
+- `.version` - Almacena hash del último commit (ignorado por git)
+
+---
+
+### 📊 Comparativa de Métodos de Inicio
+
+| Método | Ideal para | Ventajas | Desventajas |
+|--------|-----------|----------|-------------|
+| `install.bat` | Primera instalación en Windows | Todo automático, configura .env | Requiere permisos admin, puede fallar robotjs |
+| `start_project.py` | Desarrollo diario | Colores, manejo de errores, fácil debug | Requiere Python |
+| `npm run dev` | Desarrollo estándar | Simple, sin dependencias extras | Output mezclado, menos manejo de errores |
+| `docker-compose` | Producción/Servidores | Aislamiento, no requiere Node.js nativo | Más recursos, configuración extra |
+
+---
+
+### 🔄 Flujos de Trabajo Recomendados
+
+#### **Primer uso (Windows):**
+```cmd
+git clone https://github.com/litelis/remote-desktop-web.git
+cd remote-desktop-web
+scripts\install.bat
+python start_project.py
+```
+
+#### **Desarrollo diario:**
+```cmd
+python start_project.py
+# O si hay problemas:
+python start_project.py --debug
+```
+
+#### **Actualizar a última versión:**
+```cmd
+python update.py
+# O automáticamente:
+python update.py --force
+```
+
+#### **Solución de problemas:**
+```cmd
+# Verificar todo
+python start_project.py --check-only
+
+# Si hay errores, ver detalles
+python start_project.py --debug
+
+# Reinstalar todo
+rmdir /s node_modules server\node_modules client\node_modules
+python start_project.py --install
+```
+
+## 📦 Scripts NPM Disponibles
 
 ```bash
 # Instalación
@@ -231,8 +431,6 @@ npm run install:all          # Instala todas las dependencias
 npm run dev                  # Inicia cliente y servidor en paralelo
 npm run dev:server           # Solo servidor con nodemon
 npm run dev:client           # Solo cliente React
-python start_project.py      # Inicia con Python (VS Code)
-python start_project.py -i   # Instala dependencias e inicia
 
 # Producción
 npm run build                # Compila cliente para producción
@@ -243,8 +441,8 @@ npm run restart              # Reinicia PM2
 # Docker
 npm run docker:up            # Levanta stack completo
 npm run docker:down          # Detiene stack
-npm run docker:logs          # Muestra logs
 ```
+
 
 
 ---
