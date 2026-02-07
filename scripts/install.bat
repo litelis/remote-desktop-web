@@ -81,16 +81,39 @@ cd /d "%~dp0.." || (
 )
 
 echo 📦 Instalando dependencias raíz...
-call npm install || (
-    call :handle_error "Error instalando dependencias raiz" 0
+call npm install
+if %ERRORLEVEL% neq 0 (
+    call :handle_error "Error instalando dependencias raiz (codigo: %ERRORLEVEL%)" 0
 )
 
 echo 📦 Instalando dependencias del servidor...
 cd server || (
     call :handle_error "Error accediendo a carpeta server" 1
 )
-call npm install || (
-    call :handle_error "Error instalando dependencias del servidor" 0
+
+:: Verificar si hay dependencias nativas que requieren compilacion
+echo    → Verificando dependencias nativas...
+findstr /M "robotjs" package.json >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    echo    ⚠️  Se detecto robotjs (requiere Visual Studio Build Tools)
+    echo    ℹ️  Si la instalacion falla, instala manualmente:
+    echo       npm install --global windows-build-tools
+    echo       o descarga desde: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+)
+
+call npm install
+set "SERVER_ERROR=%ERRORLEVEL%"
+if %SERVER_ERROR% neq 0 (
+    call :handle_error "Error instalando dependencias del servidor (codigo: %SERVER_ERROR%)" 0
+    echo.
+    echo ❌ ERROR CRITICO EN SERVER:
+    echo    Es posible que falten Visual Studio Build Tools para compilar robotjs.
+    echo.
+    echo 🔧 Soluciones:
+    echo    1. Instala Visual Studio Build Tools con C++ workload
+    echo    2. O ejecuta: npm install --global windows-build-tools
+    echo    3. O usa Docker en lugar de instalacion nativa
+    echo.
     cd ..
     goto :continue_deps
 )
@@ -101,18 +124,26 @@ cd ..\client || (
     cd ..
     goto :continue_deps
 )
-call npm install || (
-    call :handle_error "Error instalando dependencias del cliente" 0
+call npm install
+if %ERRORLEVEL% neq 0 (
+    call :handle_error "Error instalando dependencias del cliente (codigo: %ERRORLEVEL%)" 0
 )
 
 cd .. || call :handle_error "Error regresando al directorio raiz" 0
 
 :continue_deps
 if %ERROR_COUNT% gtr 0 (
-    echo ⚠️  Algunas dependencias tuvieron errores. Revisa los mensajes anteriores.
+    echo.
+    echo ⚠️  ALERTA: Se encontraron %ERROR_COUNT% errores durante la instalacion.
+    echo    Revisa los mensajes anteriores para mas detalles.
+    echo.
+    echo ❗ Si el error fue en el servidor (robotjs/node-gyp):
+    echo    - Necesitas instalar Visual Studio Build Tools
+    echo    - O usar Docker: docker-compose up -d
 ) else (
-    echo ✅ Todas las dependencias instaladas
+    echo ✅ Todas las dependencias instaladas correctamente
 )
+
 
 
 echo.
@@ -170,11 +201,15 @@ echo.
 echo Para producción con Docker:
 echo    docker-compose up -d
 echo.
-pause
+echo ============================================
+echo  PRESIONA ENTER PARA CERRAR ESTA VENTANA
+echo ============================================
+pause >nul
 
 :: ============================================
 :: FUNCIONES DE MANEJO DE ERRORES
 :: ============================================
+
 
 :init_error_handler
 echo ℹ️  Manejador de errores inicializado

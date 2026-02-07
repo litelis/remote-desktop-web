@@ -167,7 +167,11 @@ echo    2. Configura las variables en server\.env:
 echo       SSL_CERT_PATH=./ssl/cert.pem
 echo       SSL_KEY_PATH=./ssl/key.pem
 echo.
-pause
+echo.
+echo ============================================
+echo  PRESIONA ENTER PARA CERRAR ESTA VENTANA
+echo ============================================
+pause >nul
 exit /b 0
 
 :ssl_error
@@ -175,8 +179,12 @@ echo.
 echo ❌ Error generando certificado SSL
 echo    Revisa los mensajes de error anteriores
 echo.
-pause
+echo ============================================
+echo  PRESIONA ENTER PARA CERRAR ESTA VENTANA
+echo ============================================
+pause >nul
 exit /b 1
+
 
 :: ============================================
 :: FUNCIONES DE MANEJO DE ERRORES
