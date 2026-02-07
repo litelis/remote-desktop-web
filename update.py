@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-🔄 Remote Desktop Web - Update Script
-Script para verificar y actualizar desde el repositorio GitHub
+🔄 Remote Desktop Web - Info Script
+Script para verificar y mostrar información del repositorio GitHub
 
 Uso:
-    python update.py
-    python update.py --force  # Forzar actualización sin preguntar
+    python update.py         # Mostrar información de versiones
+    python update.py --debug # Modo debug con información detallada de errores
 """
+
 
 import os
 import sys
@@ -82,7 +83,7 @@ def safe_run(command, cwd=None, shell=True, check=False, capture_output=True, er
 # Configuración
 GITHUB_REPO = "litelis/remote-desktop-web"
 GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/commits/main"
-VERSION_FILE = ".version"
+
 
 def print_banner():
     """Imprime banner del script"""
@@ -128,30 +129,8 @@ def get_remote_commit():
         return None
 
 
-def get_local_commit():
-    """Obtiene el commit local almacenado"""
-    try:
-        if os.path.exists(VERSION_FILE):
-            with open(VERSION_FILE, 'r') as f:
-                return f.read().strip()
-    except Exception as e:
-        log_error("Error leyendo versión local", e, critical=False)
-        return None
-    return None
-
-
-def save_local_commit(commit_sha):
-    """Guarda el commit local"""
-    try:
-        with open(VERSION_FILE, 'w') as f:
-            f.write(commit_sha)
-        return True
-    except Exception as e:
-        log_error("Error guardando versión local", e, critical=False)
-        return False
-
-
 def get_git_commit():
+
     """Obtiene el commit actual de git"""
     result = safe_run(
         ['git', 'rev-parse', '--short', 'HEAD'],
@@ -174,126 +153,19 @@ def check_git_repo():
     return result is not None and result.returncode == 0
 
 
-def ask_user(prompt):
-    """Pregunta al usuario y/n"""
-    while True:
-        try:
-            response = input(f"{Colors.YELLOW}{prompt} (y/n): {Colors.ENDC}").lower().strip()
-            if response in ['y', 'yes', 's', 'si', 'sí']:
-                return True
-            elif response in ['n', 'no']:
-                return False
-            else:
-                print(f"{Colors.CYAN}   Por favor responde 'y' o 'n'{Colors.ENDC}")
-        except KeyboardInterrupt:
-            print(f"\n{Colors.YELLOW}🛑 Operación cancelada{Colors.ENDC}")
-            return False
-        except Exception as e:
-            log_error("Error en la entrada del usuario", e, critical=False)
-            return False
-
-
-def perform_update():
-    """Realiza la actualización desde git"""
-    print(f"\n{Colors.YELLOW}📥 Actualizando archivos...{Colors.ENDC}")
-    
-    # Fetch latest changes
-    print(f"{Colors.BLUE}   → Descargando cambios...{Colors.ENDC}")
-    result = safe_run(
-        ['git', 'fetch', 'origin'],
-        error_msg="Error en git fetch"
-    )
-    if not result or result.returncode != 0:
-        if result and result.stderr:
-            log_error(f"git fetch falló: {result.stderr}", critical=False)
-        return False
-    
-    # Pull changes
-    print(f"{Colors.BLUE}   → Aplicando cambios...{Colors.ENDC}")
-    result = safe_run(
-        ['git', 'pull', 'origin', 'main'],
-        error_msg="Error en git pull"
-    )
-    if not result or result.returncode != 0:
-        if result and result.stderr:
-            log_error(f"git pull falló: {result.stderr}", critical=False)
-        return False
-    
-    print(f"{Colors.GREEN}✅ Archivos actualizados correctamente{Colors.ENDC}")
-    return True
-
-
-def perform_git_operations():
-    """Realiza git add, commit y push"""
-    print(f"\n{Colors.YELLOW}📤 Subiendo cambios a GitHub...{Colors.ENDC}")
-    
-    # Git add
-    print(f"{Colors.BLUE}   → Agregando cambios...{Colors.ENDC}")
-    result = safe_run(
-        ['git', 'add', '.'],
-        error_msg="Error en git add"
-    )
-    if not result or result.returncode != 0:
-        return False
-    
-    # Check if there are changes to commit
-    result = safe_run(
-        ['git', 'status', '--porcelain'],
-        error_msg="Error verificando estado de git"
-    )
-    if not result:
-        return False
-    
-    if not result.stdout.strip():
-        print(f"{Colors.CYAN}   ℹ️ No hay cambios para commitear{Colors.ENDC}")
-    else:
-        # Git commit
-        print(f"{Colors.BLUE}   → Creando commit...{Colors.ENDC}")
-        result = safe_run(
-            ['git', 'commit', '-m', 'Update from remote repository'],
-            error_msg="Error en git commit"
-        )
-        if not result or result.returncode != 0:
-            return False
-        print(f"{Colors.GREEN}✅ Commit creado{Colors.ENDC}")
-    
-    # Git push
-    print(f"{Colors.BLUE}   → Subiendo a GitHub...{Colors.ENDC}")
-    result = safe_run(
-        ['git', 'push', 'origin', 'main'],
-        error_msg="Error en git push"
-    )
-    if not result or result.returncode != 0:
-        return False
-    
-    print(f"{Colors.GREEN}✅ Cambios subidos correctamente{Colors.ENDC}")
-    return True
-
-
 def main():
+
     """Función principal"""
     global ERROR_COUNT
     
     parser = argparse.ArgumentParser(
-        description='Verifica y actualiza el proyecto desde GitHub',
+        description='Verifica y muestra información del proyecto desde GitHub',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos:
-  python update.py         # Verificar y preguntar para actualizar
-  python update.py --force # Forzar actualización sin preguntar
-  python update.py --check # Solo verificar, no actualizar
+  python update.py         # Mostrar información de versiones
   python update.py --debug # Modo debug con información detallada de errores
         """
-    )
-    parser.add_argument(
-        '-f', '--force',
-        action='store_true',
-        help='Forzar actualización sin preguntar'
-    )
-    parser.add_argument(
-        '-c', '--check',
-        action='store_true',
-        help='Solo verificar, no actualizar'
     )
     parser.add_argument(
         '--debug',
@@ -335,7 +207,6 @@ Ejemplos:
                 print(f"\n{Colors.RED}❌ Se encontraron {ERROR_COUNT} errores. Abortando.{Colors.ENDC}")
             sys.exit(1)
         
-        local = get_local_commit()
         git_current = get_git_commit()
         
         # Mostrar información
@@ -343,68 +214,28 @@ Ejemplos:
         print(f"   {Colors.BLUE}Remoto:{Colors.ENDC}  {Colors.GREEN}{remote['sha']}{Colors.ENDC} - {remote['message'][:50]}")
         print(f"   {Colors.BLUE}Autor:{Colors.ENDC}   {remote['author']} ({remote['date']})")
         
-        if local:
-            print(f"   {Colors.BLUE}Local:{Colors.ENDC}   {Colors.YELLOW}{local}{Colors.ENDC}")
-        else:
-            print(f"   {Colors.BLUE}Local:{Colors.ENDC}   {Colors.YELLOW}No registrado{Colors.ENDC}")
-        
         if git_current:
-            print(f"   {Colors.BLUE}Git:{Colors.ENDC}     {Colors.CYAN}{git_current}{Colors.ENDC}")
+            print(f"   {Colors.BLUE}Local:{Colors.ENDC}   {Colors.CYAN}{git_current}{Colors.ENDC}")
+        else:
+            print(f"   {Colors.BLUE}Local:{Colors.ENDC}   {Colors.YELLOW}No disponible{Colors.ENDC}")
         
         # Verificar si hay actualización
-        needs_update = False
-        
-        if not local:
-            needs_update = True
-            print(f"\n{Colors.YELLOW}⚠️ No hay registro de versión local{Colors.ENDC}")
-        elif local != remote['sha']:
-            needs_update = True
-            print(f"\n{Colors.YELLOW}⚠️ Hay una nueva versión disponible!{Colors.ENDC}")
-        else:
+        if git_current and git_current != remote['sha']:
+            print(f"\n{Colors.YELLOW}⚠️  Hay una nueva versión disponible en GitHub!{Colors.ENDC}")
+            print(f"{Colors.CYAN}   Para actualizar manualmente:{Colors.ENDC}")
+            print(f"{Colors.CYAN}   git pull origin main{Colors.ENDC}")
+        elif git_current and git_current == remote['sha']:
             print(f"\n{Colors.GREEN}✅ Estás en la última versión{Colors.ENDC}")
-        
-        # Solo verificar
-        if args.check:
-            sys.exit(0)
-        
-        # Actualizar si es necesario
-        if needs_update:
-            if args.force or ask_user("¿Quieres actualizar a la última versión?"):
-                if perform_update():
-                    # Guardar nueva versión
-                    save_local_commit(remote['sha'])
-                    
-                    # Realizar operaciones git
-                    perform_git_operations()
-                    
-                    print(f"\n{Colors.GREEN}{Colors.BOLD}🎉 Actualización completada!{Colors.ENDC}")
-                    print(f"{Colors.CYAN}   Versión actual: {remote['sha']}{Colors.ENDC}")
-                    if ERROR_COUNT > 0:
-                        print(f"{Colors.YELLOW}   Nota: Se encontraron {ERROR_COUNT} advertencias durante el proceso.{Colors.ENDC}")
-                else:
-                    print(f"\n{Colors.RED}❌ La actualización falló{Colors.ENDC}")
-                    if ERROR_COUNT > 0:
-                        print(f"{Colors.YELLOW}   Total de errores: {ERROR_COUNT}{Colors.ENDC}")
-                    sys.exit(1)
-            else:
-                print(f"\n{Colors.CYAN}ℹ️ Actualización cancelada por el usuario{Colors.ENDC}")
         else:
-            # Aún así hacer push si hay cambios locales
-            result = safe_run(
-                ['git', 'status', '--porcelain'],
-                error_msg="Error verificando cambios locales"
-            )
-            if result and result.stdout.strip():
-                print(f"\n{Colors.YELLOW}📤 Hay cambios locales para subir{Colors.ENDC}")
-                if args.force or ask_user("¿Quieres subir tus cambios a GitHub?"):
-                    perform_git_operations()
+            print(f"\n{Colors.YELLOW}⚠️  No se pudo determinar el estado de actualización{Colors.ENDC}")
         
-        print(f"\n{Colors.GREEN}✨ Proceso finalizado{Colors.ENDC}")
+        print(f"\n{Colors.GREEN}✨ Información mostrada correctamente{Colors.ENDC}")
         if ERROR_COUNT > 0:
             print(f"{Colors.YELLOW}   Total de advertencias/errores: {ERROR_COUNT}{Colors.ENDC}")
             
     except Exception as e:
         log_error("Error fatal en la ejecución principal", e, critical=True)
+
 
 if __name__ == "__main__":
     main()
