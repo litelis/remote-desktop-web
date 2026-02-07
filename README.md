@@ -418,8 +418,6 @@ El uso no autorizado de sistemas informáticos es **ilegal** en la mayoría de j
 - 🐛 **Issues**: [GitHub Issues](https://github.com/litelis/remote-desktop-web/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/litelis/remote-desktop-web/discussions)
 
-- 📧 **Email**: tu.email@ejemplo.com
-
 ---
 
 <p align="center">
