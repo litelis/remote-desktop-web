@@ -26,7 +26,8 @@
     "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
-    "@nut-tree-fork/nut.js": "^4.2.2",
+    "@nut-tree/nut.js": "^4.2.2",
+
 
 
     "screenshot-desktop": "^1.15.0",
