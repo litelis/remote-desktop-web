@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import { createReadStream } from 'fs';
-import { authMiddleware } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
+
 import fileTransferService from '../services/fileTransfer.js';
 import logger from '../utils/logger.js';
 
 const router = Router();
 
 // Aplicar autenticación a todas las rutas
-router.use(authMiddleware);
+router.use(requireAuth);
+
 
 // Listar archivos disponibles
 router.get('/files', async (req, res) => {
