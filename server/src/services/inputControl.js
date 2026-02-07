@@ -1,4 +1,5 @@
-import { mouse, keyboard, Button, Point, Key } from '@nut-tree/nut.js';
+import { mouse, keyboard, Button, Point, Key } from '@nut-tree-fork/nut-js';
+
 
 
 
