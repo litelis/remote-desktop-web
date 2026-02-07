@@ -15,7 +15,9 @@
   ],
   "author": "",
   "license": "MIT",
+  "type": "module",
   "dependencies": {
+
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -24,8 +26,11 @@
     "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
     "node-fetch": "^2.7.0",
-    "robotjs": "^0.6.0",
+    "@nut-tree-fork/nut.js": "^4.2.2",
+
+
     "screenshot-desktop": "^1.15.0",
+
     "sharp": "^0.33.0",
     "socket.io": "^4.7.2",
     "uuid": "^9.0.0",

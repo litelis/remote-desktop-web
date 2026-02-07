@@ -1,68 +1,70 @@
-import robot from 'robotjs';
+import { mouse, keyboard, Button, Point, Key } from '@nut-tree-fork/nut.js';
+
+
 import logger from '../utils/logger.js';
 
 class InputControlService {
   constructor() {
-    // Mapeo de teclas de JavaScript a códigos de robotjs
+    // Mapeo de teclas de JavaScript a códigos de nut.js
     this.keyMap = {
       // Navegación
-      'Enter': 'enter',
-      'Tab': 'tab',
-      'Escape': 'escape',
-      'Backspace': 'backspace',
-      'Delete': 'delete',
-      'Insert': 'insert',
-      'Home': 'home',
-      'End': 'end',
-      'PageUp': 'pageup',
-      'PageDown': 'pagedown',
+      'Enter': Key.Enter,
+      'Tab': Key.Tab,
+      'Escape': Key.Escape,
+      'Backspace': Key.Backspace,
+      'Delete': Key.Delete,
+      'Insert': Key.Insert,
+      'Home': Key.Home,
+      'End': Key.End,
+      'PageUp': Key.PageUp,
+      'PageDown': Key.PageDown,
       
       // Flechas
-      'ArrowUp': 'up',
-      'ArrowDown': 'down',
-      'ArrowLeft': 'left',
-      'ArrowRight': 'right',
+      'ArrowUp': Key.Up,
+      'ArrowDown': Key.Down,
+      'ArrowLeft': Key.Left,
+      'ArrowRight': Key.Right,
       
       // Modificadores
-      'Control': 'control',
-      'Alt': 'alt',
-      'Shift': 'shift',
-      'Meta': 'command',
-      'CapsLock': 'capslock',
+      'Control': Key.LeftControl,
+      'Alt': Key.LeftAlt,
+      'Shift': Key.LeftShift,
+      'Meta': Key.LeftSuper,
+      'CapsLock': Key.CapsLock,
       
       // Funciones
-      'F1': 'f1', 'F2': 'f2', 'F3': 'f3', 'F4': 'f4',
-      'F5': 'f5', 'F6': 'f6', 'F7': 'f7', 'F8': 'f8',
-      'F9': 'f9', 'F10': 'f10', 'F11': 'f11', 'F12': 'f12',
+      'F1': Key.F1, 'F2': Key.F2, 'F3': Key.F3, 'F4': Key.F4,
+      'F5': Key.F5, 'F6': Key.F6, 'F7': Key.F7, 'F8': Key.F8,
+      'F9': Key.F9, 'F10': Key.F10, 'F11': Key.F11, 'F12': Key.F12,
       
       // Espacio
-      ' ': 'space',
-      'Space': 'space',
+      ' ': Key.Space,
+      'Space': Key.Space,
       
       // Símbolos comunes
-      'Comma': ',',
-      'Period': '.',
-      'Slash': '/',
-      'Semicolon': ';',
-      'Quote': "'",
-      'BracketLeft': '[',
-      'BracketRight': ']',
-      'Backslash': '\\',
-      'Minus': '-',
-      'Equal': '=',
-      'Backquote': '`'
+      'Comma': Key.Comma,
+      'Period': Key.Period,
+      'Slash': Key.Slash,
+      'Semicolon': Key.Semicolon,
+      'Quote': Key.Quote,
+      'BracketLeft': Key.LeftBracket,
+      'BracketRight': Key.RightBracket,
+      'Backslash': Key.Backslash,
+      'Minus': Key.Minus,
+      'Equal': Key.Equal,
+      'Backquote': Key.Grave
     };
 
     this.buttonMap = {
-      'left': 'left',
-      'right': 'right',
-      'middle': 'middle'
+      'left': Button.LEFT,
+      'right': Button.RIGHT,
+      'middle': Button.MIDDLE
     };
   }
 
   async moveMouse(x, y) {
     try {
-      robot.moveMouse(Math.round(x), Math.round(y));
+      await mouse.move([new Point(Math.round(x), Math.round(y))]);
     } catch (error) {
       logger.error('Error moviendo mouse:', error);
       throw new Error('No se pudo mover el cursor');
@@ -71,21 +73,21 @@ class InputControlService {
 
   async click(button = 'left', type = 'click') {
     try {
-      const btn = this.buttonMap[button] || 'left';
+      const btn = this.buttonMap[button] || Button.LEFT;
       
       switch(type) {
         case 'down':
-          robot.mouseToggle('down', btn);
+          await mouse.pressButton(btn);
           break;
         case 'up':
-          robot.mouseToggle('up', btn);
+          await mouse.releaseButton(btn);
           break;
         case 'double':
-          robot.mouseClick(btn, true);
+          await mouse.doubleClick(btn);
           break;
         case 'click':
         default:
-          robot.mouseClick(btn, false);
+          await mouse.click(btn);
       }
     } catch (error) {
       logger.error('Error en click:', error);
@@ -95,24 +97,29 @@ class InputControlService {
 
   async keyPress(key, modifiers = []) {
     try {
-      const robotKey = this.keyMap[key] || key;
+      const nutKey = this.keyMap[key] || key;
       
       // Manejar modificadores
       const modifierKeys = [];
-      if (modifiers.includes('Control')) modifierKeys.push('control');
-      if (modifiers.includes('Alt')) modifierKeys.push('alt');
-      if (modifiers.includes('Shift')) modifierKeys.push('shift');
-      if (modifiers.includes('Meta')) modifierKeys.push('command');
+      if (modifiers.includes('Control')) modifierKeys.push(Key.LeftControl);
+      if (modifiers.includes('Alt')) modifierKeys.push(Key.LeftAlt);
+      if (modifiers.includes('Shift')) modifierKeys.push(Key.LeftShift);
+      if (modifiers.includes('Meta')) modifierKeys.push(Key.LeftSuper);
       
       if (modifierKeys.length > 0) {
         // Presionar modificadores
-        modifierKeys.forEach(mod => robot.keyToggle(mod, 'down'));
+        for (const mod of modifierKeys) {
+          await keyboard.pressKey(mod);
+        }
         // Presionar tecla principal
-        robot.keyTap(robotKey);
+        await keyboard.pressKey(nutKey);
+        await keyboard.releaseKey(nutKey);
         // Soltar modificadores
-        modifierKeys.forEach(mod => robot.keyToggle(mod, 'up'));
+        for (const mod of modifierKeys) {
+          await keyboard.releaseKey(mod);
+        }
       } else {
-        robot.keyTap(robotKey);
+        await keyboard.type(nutKey);
       }
     } catch (error) {
       logger.error('Error en key press:', error);
@@ -124,9 +131,9 @@ class InputControlService {
     try {
       const steps = Math.abs(Math.round(deltaY / 100)) || 1;
       if (deltaY > 0) {
-        robot.scrollMouse(0, -steps);
+        await mouse.scrollUp(steps);
       } else if (deltaY < 0) {
-        robot.scrollMouse(0, steps);
+        await mouse.scrollDown(steps);
       }
     } catch (error) {
       logger.error('Error en scroll:', error);
