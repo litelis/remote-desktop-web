@@ -66,12 +66,23 @@ class InputControlService {
 
   async moveMouse(x, y) {
     try {
+      // Validar coordenadas
+      if (typeof x !== 'number' || typeof y !== 'number' || isNaN(x) || isNaN(y)) {
+        throw new Error('Coordenadas inválidas');
+      }
+      
+      // Validar rangos razonables (pantallas típicas)
+      if (x < -10000 || x > 10000 || y < -10000 || y > 10000) {
+        throw new Error('Coordenadas fuera de rango');
+      }
+      
       await mouse.move([new Point(Math.round(x), Math.round(y))]);
     } catch (error) {
       logger.error('Error moviendo mouse:', error);
       throw new Error('No se pudo mover el cursor');
     }
   }
+
 
   async click(button = 'left', type = 'click') {
     try {

@@ -1,6 +1,10 @@
 import { PUBLIC_ACCESS_ENABLED, PUBLIC_ACCESS_PASSWORD, MAX_PUBLIC_CONNECTIONS, isPublicToken } from '../config/auth.js';
 import logger from '../utils/logger.js';
 
+// Re-exportar para uso en otros módulos
+export { PUBLIC_ACCESS_ENABLED };
+
+
 // Track public connections
 const publicConnections = new Map();
 let publicConnectionCount = 0;

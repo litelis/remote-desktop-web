@@ -88,6 +88,9 @@ const systemControl = new SystemControlService();
 // Control de sesiones activas
 const activeSessions = new Map();
 
+// Buffer para transferencias de archivos
+const fileUploadBuffers = new Map();
+
 // WebSocket con autenticación
 io.use(authenticateSocket);
 
@@ -266,6 +269,9 @@ io.on('connection', (socket) => {
       unregisterPublicConnection(socket.user.id);
     }
     
+    // Limpiar buffers de upload
+    fileUploadBuffers.delete(socket.user.id);
+    
     logger.info(`Cliente desconectado: ${socket.user.id} - Razón: ${reason}`);
   });
 
@@ -283,6 +289,16 @@ io.on('connection', (socket) => {
     
     try {
       fileTransferService.validateFile(filename, fileSize);
+      
+      // Inicializar buffer para este upload
+      fileUploadBuffers.set(transferId, {
+        chunks: [],
+        filename: fileTransferService.sanitizeFilename(filename),
+        fileSize: fileSize,
+        receivedBytes: 0,
+        socketId: socket.id
+      });
+      
       socket.emit('file_upload_ready', { transferId, status: 'ready' });
     } catch (error) {
       socket.emit('file_upload_error', { transferId, error: error.message });
@@ -291,13 +307,59 @@ io.on('connection', (socket) => {
 
   socket.on('file_chunk', async (data) => {
     const { transferId, chunk, isLast } = data;
-    // Los chunks se acumulan y se escriben al final
-    // Esta es una implementación simplificada - en producción usar streams
+    
+    try {
+      const upload = fileUploadBuffers.get(transferId);
+      if (!upload) {
+        throw new Error('Transferencia no encontrada');
+      }
+      
+      // Convertir chunk de base64 a buffer
+      const buffer = Buffer.from(chunk, 'base64');
+      upload.chunks.push(buffer);
+      upload.receivedBytes += buffer.length;
+      
+      // Emitir progreso
+      const progress = Math.round((upload.receivedBytes / upload.fileSize) * 100);
+      socket.emit('file_upload_progress', { transferId, progress });
+      
+      // Si es el último chunk, guardar archivo
+      if (isLast) {
+        const finalBuffer = Buffer.concat(upload.chunks);
+        const stream = require('stream');
+        const readable = new stream.Readable();
+        readable.push(finalBuffer);
+        readable.push(null);
+        
+        const result = await fileTransferService.saveFile(
+          readable,
+          upload.filename,
+          upload.fileSize,
+          transferId
+        );
+        
+        fileUploadBuffers.delete(transferId);
+        
+        socket.emit('file_upload_success', {
+          transferId,
+          filename: result.filename,
+          message: 'Archivo subido correctamente'
+        });
+        
+        logger.info(`✅ Upload completado: ${upload.filename}`);
+      }
+    } catch (error) {
+      fileUploadBuffers.delete(transferId);
+      logger.error(`❌ Error en file_chunk: ${error.message}`);
+      socket.emit('file_upload_error', { transferId, error: error.message });
+    }
   });
 
   socket.on('file_upload_complete', async (data) => {
     const { transferId, filename, fileSize } = data;
-    logger.info(`✅ Upload completado: ${filename}`);
+    logger.info(`✅ Upload completado (legacy): ${filename}`);
+    
+    // Este evento es legacy, ahora se maneja en file_chunk con isLast
     socket.emit('file_upload_success', { 
       transferId, 
       filename, 
@@ -451,12 +513,27 @@ io.on('connection', (socket) => {
   socket.on('chat_send', (data) => {
     const { content, to, type } = data;
     
-    if (!content || !content.trim()) {
+    // Validar mensaje
+    if (!content || typeof content !== 'string' || !content.trim()) {
       socket.emit('chat_error', { message: 'El mensaje no puede estar vacío' });
       return;
     }
     
-    if (type === 'private' && to) {
+    // Validar longitud máxima
+    if (content.length > 1000) {
+      socket.emit('chat_error', { message: 'El mensaje es demasiado largo (máx 1000 caracteres)' });
+      return;
+    }
+    
+    // Validar tipo
+    const validTypes = ['text', 'private', 'broadcast'];
+    const messageType = type || 'broadcast';
+    if (!validTypes.includes(messageType)) {
+      socket.emit('chat_error', { message: 'Tipo de mensaje inválido' });
+      return;
+    }
+    
+    if (messageType === 'private' && to) {
       // Mensaje privado
       const message = chatService.sendPrivateMessage(content, socket.user.id, to);
       

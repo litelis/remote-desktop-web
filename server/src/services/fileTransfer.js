@@ -1,8 +1,8 @@
-import { promises as fs } from 'fs';
+import { promises as fs, createReadStream, createWriteStream } from 'fs';
 import { join, basename, extname } from 'path';
-import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import logger from '../utils/logger.js';
+
 
 class FileTransferService {
   constructor() {
@@ -172,6 +172,7 @@ class FileTransferService {
       throw error;
     }
   }
+
 
   getTransferProgress(transferId) {
     const transfer = this.activeTransfers.get(transferId);

@@ -122,6 +122,7 @@ class SystemControlService {
       throw new Error(`Error ejecutando comando: ${error.message}`);
     }
   }
+
 }
 
 export default SystemControlService;

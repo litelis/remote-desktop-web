@@ -99,7 +99,7 @@ router.get('/public-status', (req, res) => {
   });
 });
 
-router.post('/verify', (req, res) => {
+router.get('/verify', (req, res) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -111,15 +111,16 @@ router.post('/verify', (req, res) => {
   try {
     const decoded = verifyToken(token);
     const isPublic = isPublicToken(decoded);
-    res.json({ 
+    return res.json({ 
       valid: true, 
       user: decoded,
       isPublic,
       connectionType: decoded.connectionType || 'private'
     });
   } catch (err) {
-    res.json({ valid: false });
+    return res.json({ valid: false });
   }
 });
+
 
 export default router;
