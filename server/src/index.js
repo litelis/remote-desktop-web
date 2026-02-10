@@ -7,6 +7,9 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import readline from 'readline';
+import { createInterface } from 'readline';
+
 
 import authRoutes from './routes/auth.js';
 import healthRoutes from './routes/health.js';
@@ -36,6 +39,36 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Función para preguntar modo de red
+const askNetworkMode = () => {
+  return new Promise((resolve) => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    console.log('\n🌐 Seleccione el modo de acceso de red:');
+    console.log('  1. Solo red local (localhost) - Más seguro, solo accesible desde esta computadora');
+    console.log('  2. Cualquier red (público) - Accesible desde cualquier dispositivo en la red\n');
+
+    rl.question('Seleccione una opción (1 o 2): ', (answer) => {
+      rl.close();
+      const choice = answer.trim();
+      if (choice === '1') {
+        console.log('✅ Modo seleccionado: Solo red local (127.0.0.1)\n');
+        resolve({ host: '127.0.0.1', mode: 'local' });
+      } else if (choice === '2') {
+        console.log('⚠️  Modo seleccionado: Acceso público (0.0.0.0) - Cualquier dispositivo en la red puede conectarse\n');
+        resolve({ host: '0.0.0.0', mode: 'public' });
+      } else {
+        console.log('⚠️  Opción inválida. Usando modo seguro: Solo red local\n');
+        resolve({ host: '127.0.0.1', mode: 'local' });
+      }
+    });
+  });
+};
+
 
 const app = express();
 const httpServer = createServer(app);
@@ -582,16 +615,39 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 8443;
 
-httpServer.listen(PORT, () => {
-  logger.info(`🚀 Servidor remoto ejecutándose en puerto ${PORT}`);
-  logger.info(`📱 Acceso local: http://localhost:${PORT}`);
-  if (PUBLIC_ACCESS_ENABLED) {
-    logger.info(`🌐 Acceso público: Habilitado (máx: ${process.env.MAX_PUBLIC_CONNECTIONS || 5} conexiones)`);
-  } else {
-    logger.info(`🌐 Acceso público: Deshabilitado`);
-  }
-  logger.info(`🔒 Modo: ${process.env.NODE_ENV || 'development'}`);
-});
+// Iniciar servidor con selección de modo de red
+const startServer = async () => {
+  const networkConfig = await askNetworkMode();
+  
+  httpServer.listen(PORT, networkConfig.host, () => {
+    logger.info(`🚀 Servidor remoto ejecutándose en puerto ${PORT}`);
+    logger.info(`📱 Acceso local: http://localhost:${PORT}`);
+    
+    if (networkConfig.mode === 'public') {
+      const networkInterfaces = Object.values(require('os').networkInterfaces())
+        .flat()
+        .filter(iface => iface.family === 'IPv4' && !iface.internal)
+        .map(iface => iface.address);
+      
+      if (networkInterfaces.length > 0) {
+        logger.info(`🌐 Acceso de red: http://${networkInterfaces[0]}:${PORT}`);
+        logger.info(`   (disponible en cualquier dispositivo de la red)`);
+      }
+    } else {
+      logger.info(`🔒 Acceso restringido: Solo localhost (127.0.0.1)`);
+    }
+    
+    if (PUBLIC_ACCESS_ENABLED) {
+      logger.info(`🌐 Acceso público internet: Habilitado (máx: ${process.env.MAX_PUBLIC_CONNECTIONS || 5} conexiones)`);
+    } else {
+      logger.info(`🌐 Acceso público internet: Deshabilitado`);
+    }
+    logger.info(`🔒 Modo: ${process.env.NODE_ENV || 'development'}`);
+  });
+};
+
+startServer();
+
 
 // Manejo de señales de terminación
 process.on('SIGTERM', () => {
